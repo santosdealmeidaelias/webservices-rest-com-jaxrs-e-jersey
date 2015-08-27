@@ -52,7 +52,11 @@ public class ProjetoResourceTest {
 		String xml = projeto.toXML();
 		Entity<String> entity = Entity.entity(xml, MediaType.APPLICATION_XML);		
 		Response response = target.path("/projetos").request().post(entity);
-		Assert.assertEquals("<status>sucesso</status>", response.readEntity(String.class));
+		Assert.assertEquals(201, response.getStatus());
+		
+		String location = response.getHeaderString("Location");
+		String conteudo = client.target(location).request().get(String.class);
+		Assert.assertTrue(conteudo.contains("Meu novo emprego"));
 	}
 
 }
