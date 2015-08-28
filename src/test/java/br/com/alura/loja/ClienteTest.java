@@ -8,6 +8,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.filter.LoggingFilter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,10 +22,16 @@ import junit.framework.Assert;
 
 public class ClienteTest {
 	private HttpServer server;
+	private Client client;
+	private WebTarget target;
 	
 	@Before
 	public void startaServidor(){
 		this.server = Servidor.inicializaServidor();
+		ClientConfig config = new ClientConfig();
+		config.register(new LoggingFilter());
+		client = ClientBuilder.newClient(config);
+		target = client.target("http://localhost:8080");
 	}
 	
 	@After
@@ -34,7 +42,6 @@ public class ClienteTest {
 	
 	@Test
 	public void testaQueAConexaoComServidorFunciona() throws Exception {
-		Client client = ClientBuilder.newClient();
 		WebTarget target = client.target("http://www.mocky.io");
 		String conteudo = target.path("/v2/52aaf5deee7ba8c70329fb7d").request().get(String.class);
 		Assert.assertTrue(conteudo.contains("<rua>Rua Vergueiro 3185"));
@@ -42,8 +49,6 @@ public class ClienteTest {
 	
 	@Test
 	public void deveSalvarUmNovoCarrinhoNoServidor(){
-		Client client = ClientBuilder.newClient();
-		WebTarget target = client.target("http://localhost:8080");
 		Carrinho carrinho = new Carrinho();
 		carrinho.adiciona(new Produto(314L, "Tablet", 999, 1));
 		carrinho.setRua("Rua Vergueiro");
@@ -51,12 +56,10 @@ public class ClienteTest {
 		String xml = carrinho.toXML();
 		
 		Entity<String> entity = Entity.entity(xml, MediaType.APPLICATION_XML);
-		Response response = target.path("/carrinhos").request().post(entity);
-		
+		Response response = target.path("/carrinhos").request().post(entity);		
 		Assert.assertEquals(201, response.getStatus());
 		
-		String location = response.getHeaderString("Location");
-		
+		String location = response.getHeaderString("Location");		
 		String conteudo = client.target(location).request().get(String.class);
 		Assert.assertTrue(conteudo.contains("Tablet"));
 	}
@@ -64,8 +67,6 @@ public class ClienteTest {
 	
 	@Test
 	public void testaQueBuscarUmCarrinhoTrazCarrinhoEsperado() {
-		Client client = ClientBuilder.newClient();
-		WebTarget target = client.target("http://localhost:8080");
 		String conteudo = target.path("/carrinhos/1").request().get(String.class);
 		Carrinho carrinho = (Carrinho)new XStream().fromXML(conteudo);
 		Assert.assertEquals("Rua Vergueiro 3185, 8 andar", carrinho.getRua());
