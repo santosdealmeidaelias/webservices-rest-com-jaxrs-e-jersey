@@ -38,8 +38,7 @@ public class ProjetoResourceTest {
 	public void buscaProjetosApartirDaURI() {
 		Client client = ClientBuilder.newClient();
 		WebTarget target = client.target("http://localhost:8080");
-		String conteudo = target.path("/projetos/1").request().get(String.class);
-		Projeto projeto = (Projeto) new XStream().fromXML(conteudo);
+		Projeto projeto = target.path("/projetos/1").request().get(Projeto.class);
 		assertEquals("Minha Loja", projeto.getNome());
 	}
 	
@@ -49,14 +48,13 @@ public class ProjetoResourceTest {
 		WebTarget target = client.target("http://localhost:8080");
 		
 		Projeto projeto = new Projeto(2L, "Meu novo emprego", 2015);
-		String xml = projeto.toXML();
-		Entity<String> entity = Entity.entity(xml, MediaType.APPLICATION_XML);		
+		Entity<Projeto> entity = Entity.entity(projeto, MediaType.APPLICATION_XML);		
 		Response response = target.path("/projetos").request().post(entity);
 		Assert.assertEquals(201, response.getStatus());
 		
 		String location = response.getHeaderString("Location");
-		String conteudo = client.target(location).request().get(String.class);
-		Assert.assertTrue(conteudo.contains("Meu novo emprego"));
+		Projeto projetoCarregado = client.target(location).request().get(Projeto.class);
+		Assert.assertEquals("Meu novo emprego", projetoCarregado.getNome());
 	}
 
 }
